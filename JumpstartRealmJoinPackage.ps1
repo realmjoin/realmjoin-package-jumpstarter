@@ -7,12 +7,12 @@ Param(
     [switch] $DoNotQueryParameters,
     [switch] $DoNotCreateRepository,
     [switch] $DoNotCloneRepository,
+    [switch] $DoNotCopyTemplate,
     [switch] $DoNotAddSubmodule
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version 2
-$currentDirectory = (Get-Location).Path
 
 
 if (-not $DoNotQueryParameters) {
@@ -33,8 +33,11 @@ if (-not $DoNotQueryParameters) {
     }
 }
 
-if (-not $repositoryPath) {
-    $repositoryPath = [System.IO.Path]::GetFileName($currentDirectory)
+if ($repositoryPath) {
+        New-Item $repositoryPath -Type Directory -ErrorAction SilentlyContinue | Out-Null
+        Set-Location $repositoryPath
+    } else {
+        $repositoryPath = [System.IO.Path]::GetFileName((Get-Location).Path)
 }
 if (-not $repositoryName) {
     $repositoryName = $repositoryPath
@@ -42,6 +45,7 @@ if (-not $repositoryName) {
 if (-not $repositoryNamespace) {
     $repositoryNamespace = "generic-packages"
 }
+
 if ($gitUseSsh) {
     $gitRepoPrefix = "git@gitlab.realmjoin.com:"
 } else {
@@ -50,6 +54,7 @@ if ($gitUseSsh) {
 
 
 if (-not $DoNotCreateRepository) {
+
     $gitLabApiUriStub = "https://gitlab.realmjoin.com/api/v4"
     $gitLabHeaders = @{"PRIVATE-TOKEN" = $gitlabPersonalAccessToken}
 
@@ -67,18 +72,37 @@ if (-not $DoNotCreateRepository) {
 
     "Successfully created repository $repositoryUrl"
     ""
+
 } else {
+
     $repositoryUrl = "$gitRepoPrefix$repositoryNamespace/$repositoryPath.git"
+
 }
 
 
 if (-not $DoNotCloneRepository) {
-    "git clone $repositoryUrl $currentDirectory"
-    git clone $repositoryUrl $currentDirectory
+
+    git clone $repositoryUrl .
+
+}
+
+
+if (-not $DoNotCopyTemplate) {
+
+    git clone "$($gitRepoPrefix)generic-packages/template-choco.git" "_template"
+
+    Remove-Item "_template\.git" -Recurse -Force
+    Move-Item "_template\*" .
+    Remove-Item "_template"
+
+    git add ".git*"
+
 }
 
 
 if (-not $DoNotAddSubmodule) {
+
     git submodule add --name "realmjoin-gitlab-ci-helpers" "$($gitRepoPrefix)generic-packages/realmjoin-gitlab-ci-helpers.git" ".realmjoin-gitlab-ci-helpers"
     git config --file ".gitmodules" "submodule.realmjoin-gitlab-ci-helpers.url" "../../generic-packages/realmjoin-gitlab-ci-helpers.git"
+
 }
