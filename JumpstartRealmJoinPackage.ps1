@@ -3,6 +3,7 @@ Param(
     [string] $RepositoryName,
     [string] $RepositoryNamespace,
     [string] $GitlabPersonalAccessToken,
+    [switch] $GitUseSsh,
     [switch] $DoNotQueryParameters,
     [switch] $DoNotCreateRepository,
     [switch] $DoNotCloneRepository,
@@ -27,6 +28,9 @@ if (-not $DoNotQueryParameters) {
     if (-not $gitlabPersonalAccessToken) {
         $gitlabPersonalAccessToken = Read-Host "Please enter your RealmJoin GitLab Personal Access Token"
     }
+    if (-not $gitUseSsh) {
+        $gitUseSsh = [switch]((Read-Host "Use SSH for Git (default is https)") -in "y","j","1","true")
+    }
 }
 
 if (-not $repositoryPath) {
@@ -37,6 +41,11 @@ if (-not $repositoryName) {
 }
 if (-not $repositoryNamespace) {
     $repositoryNamespace = "generic-packages"
+}
+if ($gitUseSsh) {
+    $gitRepoPrefix = "git@gitlab.realmjoin.com:"
+} else {
+    $gitRepoPrefix = "https://gitlab.realmjoin.com/"
 }
 
 
@@ -50,22 +59,26 @@ if (-not $DoNotCreateRepository) {
 
     $postParams = @{name = $repositoryName; path = $repositoryPath; namespace_id = $namespace_id; lfs_enabled = $true}
     $apiResult = Invoke-RestMethod "$gitLabApiUriStub/projects" -Headers $gitLabHeaders -Method POST -Body $postParams
-    $repositoryUrl = $apiResult.ssh_url_to_repo
+    if ($gitUseSsh) {
+        $repositoryUrl = $apiResult.ssh_url_to_repo
+    } else {
+        $repositoryUrl = $apiResult.http_url_to_repo
+    }
 
     "Successfully created repository $repositoryUrl"
     ""
+} else {
+    $repositoryUrl = "$gitRepoPrefix$repositoryNamespace/$repositoryPath.git"
 }
 
 
 if (-not $DoNotCloneRepository) {
-    if (-not $repositoryUrl) {
-        $repositoryUrl = "git@gitlab.realmjoin.com:$repositoryNamespace/$repositoryPath.git"
-    }
+    "git clone $repositoryUrl $currentDirectory"
     git clone $repositoryUrl $currentDirectory
 }
 
 
 if (-not $DoNotAddSubmodule) {
-    git submodule add --name "realmjoin-gitlab-ci-helpers" "git@gitlab.realmjoin.com:generic-packages/realmjoin-gitlab-ci-helpers.git" ".realmjoin-gitlab-ci-helpers"
+    git submodule add --name "realmjoin-gitlab-ci-helpers" "$($gitRepoPrefix)generic-packages/realmjoin-gitlab-ci-helpers.git" ".realmjoin-gitlab-ci-helpers"
     git config --file ".gitmodules" "submodule.realmjoin-gitlab-ci-helpers.url" "../../generic-packages/realmjoin-gitlab-ci-helpers.git"
 }
