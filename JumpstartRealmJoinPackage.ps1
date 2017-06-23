@@ -8,7 +8,9 @@ Param(
     [switch] $DoNotCreateRepository,
     [switch] $DoNotCloneRepository,
     [switch] $DoNotCopyTemplate,
-    [switch] $DoNotAddSubmodule
+    [switch] $DoNotRunTemplateScript,
+    [Parameter(ValueFromRemainingArguments = $true)] $RemainingArgumentsToPassToTemplate
+
 )
 
 $ErrorActionPreference = "Stop"
@@ -84,6 +86,10 @@ if (-not $DoNotCloneRepository) {
 
     git clone $repositoryUrl .
 
+} elseif (-not (Test-Path ".git" -PathType Container)) {
+
+    git init
+
 }
 
 
@@ -92,17 +98,13 @@ if (-not $DoNotCopyTemplate) {
     git clone "$($gitRepoPrefix)generic-packages/template-choco.git" "_template"
 
     Remove-Item "_template\.git" -Recurse -Force
-    Move-Item "_template\*" .
-    Remove-Item "_template"
+    Copy-Item "_template\*" "." -Force
+    Remove-Item "_template" -Recurse -Force
+
+    if ((-not $DoNotRunTemplateScript) -and (Test-Path "Jumpstart.ps1")) {
+        & ".\Jumpstart.ps1" -GitUseSsh:$gitUseSsh @RemainingArgumentsToPassToTemplate
+    }
 
     git add ".git*"
-
-}
-
-
-if (-not $DoNotAddSubmodule) {
-
-    git submodule add --name "realmjoin-gitlab-ci-helpers" "$($gitRepoPrefix)generic-packages/realmjoin-gitlab-ci-helpers.git" ".realmjoin-gitlab-ci-helpers"
-    git config --file ".gitmodules" "submodule.realmjoin-gitlab-ci-helpers.url" "../../generic-packages/realmjoin-gitlab-ci-helpers.git"
 
 }
