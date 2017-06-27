@@ -98,7 +98,7 @@ if (-not $DoNotCopyTemplate) {
     git clone "$($gitRepoPrefix)generic-packages/template-choco.git" "_template"
 
     Remove-Item "_template\.git" -Recurse -Force
-    Copy-Item "_template\*" "." -Force
+    Copy-Item "_template\*" "." -Recurse -Force
     Remove-Item "_template" -Recurse -Force
 
     if ((-not $DoNotRunTemplateScript) -and (Test-Path "Jumpstart.ps1")) {
