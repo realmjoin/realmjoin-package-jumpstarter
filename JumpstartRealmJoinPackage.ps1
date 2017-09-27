@@ -102,9 +102,10 @@ if (-not $DoNotCopyTemplate) {
     Remove-Item "_template" -Recurse -Force
 
     if ((-not $DoNotRunTemplateScript) -and (Test-Path "Jumpstart.ps1")) {
-        & ".\Jumpstart.ps1" -GitUseSsh:$gitUseSsh @RemainingArgumentsToPassToTemplate
+        & ".\Jumpstart.ps1" -RepositoryPath:$RepositoryPath -RepositoryName:$RepositoryName -RepositoryNamespace:$RepositoryNamespace -GitUseSsh:$gitUseSsh @RemainingArgumentsToPassToTemplate
     }
 
     git add ".git*"
 
 }
+
