@@ -95,14 +95,14 @@ if (-not $DoNotCloneRepository) {
 
 if (-not $DoNotCopyTemplate) {
 
-    git clone "$($gitRepoPrefix)generic-packages/template-choco.git" "_template"
+    git clone --branch beta "$($gitRepoPrefix)generic-packages/template-choco.git" "_template"
 
     Remove-Item "_template\.git" -Recurse -Force
     Copy-Item "_template\*" "." -Recurse -Force
     Remove-Item "_template" -Recurse -Force
 
     if ((-not $DoNotRunTemplateScript) -and (Test-Path "Jumpstart.ps1")) {
-        & ".\Jumpstart.ps1" -RepositoryPath:$RepositoryPath -RepositoryName:$RepositoryName -RepositoryNamespace:$RepositoryNamespace -GitUseSsh:$gitUseSsh @RemainingArgumentsToPassToTemplate
+        & ".\Jumpstart.ps1" -RepositoryPath:$RepositoryPath -RepositoryName:$RepositoryName -GitUseSsh:$gitUseSsh @RemainingArgumentsToPassToTemplate
     }
 
     git add ".git*"
