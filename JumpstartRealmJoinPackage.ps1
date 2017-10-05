@@ -18,20 +18,21 @@ Set-StrictMode -Version 2
 
 
 if (-not $DoNotQueryParameters) {
+    Write-Host "Querying missing parameters about RealmJoin GitLab:"
     if (-not $repositoryPath) {
-        $repositoryPath = Read-Host "Please enter the RealmJoin GitLab repository path (leave empty for current folder name)"
+        $repositoryPath = Read-Host "Repository path (leave empty for current folder name, Format: {VENDOR}-{PRODUCTNAME})"
     }
     if (-not $repositoryName) {
-        $repositoryName = Read-Host "Please enter the RealmJoin GitLab repository name (leave empty for repository path)"
+        $repositoryName = Read-Host "Repository name (leave empty for repository path)"
     }
     if (-not $repositoryNamespace) {
-        $repositoryNamespace = Read-Host "Please enter the RealmJoin GitLab repository namespace (leave empty for 'generic-packages')"
+        $repositoryNamespace = Read-Host "Repository namespace (leave empty for 'generic-packages', Format: {CUSTOMER}-packages)"
     }
     if (-not $gitlabPersonalAccessToken) {
-        $gitlabPersonalAccessToken = Read-Host "Please enter your RealmJoin GitLab Personal Access Token"
+        $gitlabPersonalAccessToken = Read-Host "Personal Access Token"
     }
     if (-not $gitUseSsh) {
-        $gitUseSsh = [switch]((Read-Host "Use SSH for Git (default is https)") -in "y","j","1","true")
+        $gitUseSsh = [switch]((Read-Host "Use SSH for Git (y/n, default is https)") -in "y","j","1","true")
     }
 }
 
@@ -102,7 +103,7 @@ if (-not $DoNotCopyTemplate) {
     Remove-Item "_template" -Recurse -Force
 
     if ((-not $DoNotRunTemplateScript) -and (Test-Path "Jumpstart.ps1")) {
-        & ".\Jumpstart.ps1" -RepositoryPath:$RepositoryPath -RepositoryName:$RepositoryName -GitUseSsh:$gitUseSsh @RemainingArgumentsToPassToTemplate
+        & ".\Jumpstart.ps1" -RepositoryPath:$RepositoryPath -RepositoryName:$RepositoryName -RepositoryNamespace:$RepositoryNamespace -GitUseSsh:$gitUseSsh @RemainingArgumentsToPassToTemplate
     }
 
     git add ".git*"
