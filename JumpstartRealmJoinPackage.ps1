@@ -96,7 +96,7 @@ if (-not $DoNotCloneRepository) {
 
 if (-not $DoNotCopyTemplate) {
 
-    git clone --branch beta "$($gitRepoPrefix)generic-packages/template-choco.git" "_template"
+    git clone "$($gitRepoPrefix)generic-packages/template-choco.git" "_template"
 
     Remove-Item "_template\.git" -Recurse -Force
     Copy-Item "_template\*" "." -Recurse -Force
