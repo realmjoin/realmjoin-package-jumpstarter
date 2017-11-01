@@ -17,6 +17,20 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version 2
 
 
+if (-not $gitlabPersonalAccessToken) {
+    # try reading token from file
+    $fileToken = "gl.token"
+    $fileTest = Join-Path $(Get-Location).Path $fileToken
+    if ( Test-Path -PathType Leaf -Path $fileTest ) {
+        $gitlabPersonalAccessToken = Get-Content -Path $fileTest
+    } else {
+        $fileTest = Join-Path (Split-Path $(get-location) -parent) $fileToken
+        if ( Test-Path -PathType Leaf -Path $fileTest ) {
+            $gitlabPersonalAccessToken = Get-Content -Path $fileTest
+        }
+    }
+}
+
 if (-not $DoNotQueryParameters) {
     Write-Host "Querying missing parameters about RealmJoin GitLab:"
     if (-not $repositoryPath) {
@@ -29,10 +43,10 @@ if (-not $DoNotQueryParameters) {
         $repositoryNamespace = Read-Host "Repository namespace (leave empty for 'generic-packages', Format: {CUSTOMER}-packages)"
     }
     if (-not $gitlabPersonalAccessToken) {
-        $gitlabPersonalAccessToken = Read-Host "Personal Access Token"
+        $gitlabPersonalAccessToken = Read-Host "Personal Access Token (to automate, create gl.token file)"
     }
     if (-not $gitUseSsh) {
-        $gitUseSsh = [switch]((Read-Host "Use SSH for Git (y/n, default is https)") -in "y","j","1","true")
+        $gitUseSsh = [switch]((Read-Host "Use SSH for Git [y/N] (default is https)") -in "y","j","1","true")
     }
 }
 
