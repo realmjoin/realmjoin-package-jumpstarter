@@ -34,13 +34,13 @@ if (-not $gitlabPersonalAccessToken) {
 if (-not $DoNotQueryParameters) {
     Write-Host "Querying missing parameters about RealmJoin GitLab:"
     if (-not $repositoryPath) {
-        $repositoryPath = Read-Host "Repository path (leave empty for current folder name, Format: {VENDOR}-{PRODUCTNAME})"
+        $repositoryPath = Read-Host "Repository path (leave empty for current folder name, Format: {vendor}-{productname})"
     }
     if (-not $repositoryName) {
         $repositoryName = Read-Host "Repository name (leave empty for repository path)"
     }
     if (-not $repositoryNamespace) {
-        $repositoryNamespace = Read-Host "Repository namespace (leave empty for 'generic-packages', Format: {CUSTOMER}-packages)"
+        $repositoryNamespace = Read-Host "Repository namespace (leave empty for 'generic-packages', Format: {customer}-packages)"
     }
     if (-not $gitlabPersonalAccessToken) {
         $gitlabPersonalAccessToken = Read-Host "Personal Access Token (to automate, create gl.token file)"
