@@ -76,6 +76,11 @@ if (-not $DoNotCreateRepository) {
     $gitLabHeaders = @{"PRIVATE-TOKEN" = $gitlabPersonalAccessToken}
 
     $apiResult = Invoke-RestMethod "$gitLabApiUriStub/namespaces?search=$repositoryNamespace" -Headers $gitLabHeaders
+      
+      foreach($i in $apiResult){if($i.path -eq "debeka-packages"){
+        $apiResult = @()
+        $apiResult = $apiresult += $i
+          }}
     if ($apiResult.length -ne 1) { Throw "Namespace could not be identified exactly (`$apiResult.length = $($apiResult.length))." }
     $namespace_id = $apiResult[0].id;
 
