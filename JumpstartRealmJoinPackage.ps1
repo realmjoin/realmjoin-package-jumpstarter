@@ -75,14 +75,13 @@ if (-not $DoNotCreateRepository) {
     $gitLabApiUriStub = "https://gitlab.realmjoin.com/api/v4"
     $gitLabHeaders = @{"PRIVATE-TOKEN" = $gitlabPersonalAccessToken}
 
-    $apiResult = Invoke-RestMethod "$gitLabApiUriStub/namespaces?search=$repositoryNamespace" -Headers $gitLabHeaders
-      
-      foreach($i in $apiResult){if($i.path -eq "debeka-packages"){
-        $apiResult = @()
-        $apiResult = $apiresult += $i
-          }}
-    if ($apiResult.length -ne 1) { Throw "Namespace could not be identified exactly (`$apiResult.length = $($apiResult.length))." }
-    $namespace_id = $apiResult[0].id;
+    $matchingNamespaces = Invoke-RestMethod "$gitLabApiUriStub/namespaces?search=$repositoryNamespace" -Headers $gitLabHeaders
+    # ignore username namespaces and match at beginning only
+    $matchingNamespaces = @($matchingNamespaces | Where-Object { $_.kind -ieq "group" -and $_.path -ilike "$repositoryNamespace*" })
+    if ($matchingNamespaces.length -ne 1) {
+        Throw "Namespace could not be identified exactly (found $($matchingNamespaces | Select-Object -ExpandProperty full_path))."
+    }
+    $namespace_id = $matchingNamespaces[0].id;
 
     $postParams = @{name = $repositoryName; path = $repositoryPath; namespace_id = $namespace_id; lfs_enabled = $true}
     $apiResult = Invoke-RestMethod "$gitLabApiUriStub/projects" -Headers $gitLabHeaders -Method POST -Body $postParams
