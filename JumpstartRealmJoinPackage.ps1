@@ -82,6 +82,7 @@ if (-not $DoNotCreateRepository) {
         Throw "Namespace could not be identified exactly (found $($matchingNamespaces | Select-Object -ExpandProperty full_path))."
     }
     $namespace_id = $matchingNamespaces[0].id;
+    $RepositoryNamespace = $matchingNamespaces[0].full_path
 
     $postParams = @{name = $repositoryName; path = $repositoryPath; namespace_id = $namespace_id; lfs_enabled = $true}
     $apiResult = Invoke-RestMethod "$gitLabApiUriStub/projects" -Headers $gitLabHeaders -Method POST -Body $postParams
@@ -127,4 +128,3 @@ if (-not $DoNotCopyTemplate) {
     git add ".git*"
 
 }
-
