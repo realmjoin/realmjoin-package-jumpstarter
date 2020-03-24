@@ -2,7 +2,7 @@ Param(
     [string] $RepositoryPath,
     [string] $RepositoryName,
     [string] $RepositoryNamespace,
-    [string] $GitlabPersonalAccessToken,
+    [string] $GitlabPersonalAccessToken = $Env:GitLabToken,
     [switch] $GitUseSsh,
     [switch] $DoNotQueryParameters,
     [switch] $DoNotCreateRepository,
@@ -18,16 +18,10 @@ Set-StrictMode -Version 2
 
 
 if (-not $gitlabPersonalAccessToken) {
-    # try reading token from file
-    $fileToken = "gl.token"
-    $fileTest = Join-Path $(Get-Location).Path $fileToken
-    if ( Test-Path -PathType Leaf -Path $fileTest ) {
-        $gitlabPersonalAccessToken = Get-Content -Path $fileTest
-    } else {
-        $fileTest = Join-Path (Split-Path $(get-location) -parent) $fileToken
-        if ( Test-Path -PathType Leaf -Path $fileTest ) {
-            $gitlabPersonalAccessToken = Get-Content -Path $fileTest
-        }
+    # try to read token from file
+    $gitlabPersonalAccessToken = Get-Content "gl.token" -ErrorAction SilentlyContinue
+    if (-not $gitlabPersonalAccessToken) {
+        $gitlabPersonalAccessToken = Get-Content "..\gl.token" -ErrorAction SilentlyContinue
     }
 }
 
@@ -43,18 +37,19 @@ if (-not $DoNotQueryParameters) {
         $repositoryNamespace = Read-Host "Repository namespace (leave empty for 'generic-packages', Format: {customer}-packages)"
     }
     if (-not $gitlabPersonalAccessToken) {
-        $gitlabPersonalAccessToken = Read-Host "Personal Access Token (to automate, create gl.token file)"
+        $gitlabPersonalAccessToken = Read-Host "Personal Access Token (to automate, set env var GitLabToken or create gl.token file)"
     }
     if (-not $gitUseSsh) {
-        $gitUseSsh = [switch]((Read-Host "Use SSH for Git [y/N] (default is https)") -in "y","j","1","true")
+        $gitUseSsh = [switch]((Read-Host "Use SSH for Git [y/N] (default is https)") -in "y", "j", "1", "true")
     }
 }
 
 if ($repositoryPath) {
-        New-Item $repositoryPath -Type Directory -ErrorAction SilentlyContinue | Out-Null
-        Set-Location $repositoryPath
-    } else {
-        $repositoryPath = [System.IO.Path]::GetFileName((Get-Location).Path)
+    New-Item $repositoryPath -Type Directory -ErrorAction SilentlyContinue | Out-Null
+    Set-Location $repositoryPath
+}
+else {
+    $repositoryPath = [System.IO.Path]::GetFileName((Get-Location).Path)
 }
 if (-not $repositoryName) {
     $repositoryName = $repositoryPath
@@ -65,7 +60,8 @@ if (-not $repositoryNamespace) {
 
 if ($gitUseSsh) {
     $gitRepoPrefix = "git@gitlab.realmjoin.com:"
-} else {
+}
+else {
     $gitRepoPrefix = "https://gitlab.realmjoin.com/"
 }
 
@@ -73,7 +69,7 @@ if ($gitUseSsh) {
 if (-not $DoNotCreateRepository) {
 
     $gitLabApiUriStub = "https://gitlab.realmjoin.com/api/v4"
-    $gitLabHeaders = @{"PRIVATE-TOKEN" = $gitlabPersonalAccessToken}
+    $gitLabHeaders = @{ "PRIVATE-TOKEN" = $gitlabPersonalAccessToken }
 
     $matchingNamespaces = Invoke-RestMethod "$gitLabApiUriStub/namespaces?search=$repositoryNamespace" -Headers $gitLabHeaders
     # ignore username namespaces and match at beginning only
@@ -84,18 +80,20 @@ if (-not $DoNotCreateRepository) {
     $namespace_id = $matchingNamespaces[0].id;
     $RepositoryNamespace = $matchingNamespaces[0].full_path
 
-    $postParams = @{name = $repositoryName; path = $repositoryPath; namespace_id = $namespace_id; lfs_enabled = $true}
+    $postParams = @{ name = $repositoryName; path = $repositoryPath; namespace_id = $namespace_id; lfs_enabled = $true }
     $apiResult = Invoke-RestMethod "$gitLabApiUriStub/projects" -Headers $gitLabHeaders -Method POST -Body $postParams
     if ($gitUseSsh) {
         $repositoryUrl = $apiResult.ssh_url_to_repo
-    } else {
+    }
+    else {
         $repositoryUrl = $apiResult.http_url_to_repo
     }
 
     "Successfully created repository $repositoryUrl"
     ""
 
-} else {
+}
+else {
 
     $repositoryUrl = "$gitRepoPrefix$repositoryNamespace/$repositoryPath.git"
 
@@ -106,7 +104,8 @@ if (-not $DoNotCloneRepository) {
 
     git clone $repositoryUrl .
 
-} elseif (-not (Test-Path ".git" -PathType Container)) {
+}
+elseif (-not (Test-Path ".git" -PathType Container)) {
 
     git init
 
@@ -115,7 +114,7 @@ if (-not $DoNotCloneRepository) {
 
 if (-not $DoNotCopyTemplate) {
 
-    git clone "$($gitRepoPrefix)special-packages/template-choco.git" "_template"
+    git clone --depth 1 "$($gitRepoPrefix)common/package-templates.git" "_template"
 
     Remove-Item "_template\.git" -Recurse -Force
     Copy-Item "_template\*" "." -Recurse -Force
@@ -124,7 +123,5 @@ if (-not $DoNotCopyTemplate) {
     if ((-not $DoNotRunTemplateScript) -and (Test-Path "Jumpstart.ps1")) {
         & ".\Jumpstart.ps1" -RepositoryPath:$RepositoryPath -RepositoryName:$RepositoryName -RepositoryNamespace:$RepositoryNamespace -GitUseSsh:$gitUseSsh @RemainingArgumentsToPassToTemplate
     }
-
-    git add ".git*"
 
 }
