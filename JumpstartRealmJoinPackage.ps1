@@ -39,7 +39,7 @@ if (-not $DoNotQueryParameters) {
     if (-not $gitlabPersonalAccessToken) {
         $gitlabPersonalAccessToken = Read-Host "Personal Access Token (to automate, set env var GitLabToken or create gl.token file)"
     }
-    if (-not $gitUseSsh) {
+    if (-not $PSBoundParameters.ContainsKey("GitUseSsh")) {
         $gitUseSsh = [switch]((Read-Host "Use SSH for Git [y/N] (default is https)") -in "y", "j", "1", "true")
     }
 }
