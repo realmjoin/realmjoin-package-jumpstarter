@@ -118,6 +118,7 @@ if (-not $DoNotCopyTemplate) {
 
     Remove-Item "_template\.git" -Recurse -Force
     Copy-Item "_template\*" "." -Recurse -Force
+    # Copy-Item "$PSScriptRoot\..\package-templates\*" "." -Recurse -Force
     Remove-Item "_template" -Recurse -Force
 
     if ((-not $DoNotRunTemplateScript) -and (Test-Path "Jumpstart.ps1")) {
