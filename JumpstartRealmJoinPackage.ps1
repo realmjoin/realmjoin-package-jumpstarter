@@ -31,6 +31,7 @@ if (-not $gitlabPersonalAccessToken) {
 }
 
 if (-not $DoNotQueryParameters) {
+
     Write-Host "*** Querying missing package parameters ***"
     Write-Host "* For vendor name, use a short name, e.g. just 'Microsoft' instead of "
     Write-Host "  'Microsoft Corporation'."
@@ -39,40 +40,50 @@ if (-not $DoNotQueryParameters) {
     Write-Host "* For organic packages, use 'Organic' as vendor name and the full appliction name "
     Write-Host "  incl. vendor as application name, e.g. 'Organic' and 'Microsoft Coding Toolbox'."
     Write-Host
+
     if (-not $vendorName) {
         $vendorName = (Read-Host "Vendor name").Trim()
     }
+
+    # we really need this, so we loop until we get it
     while (-not $applicationName) {
-        # we really need this, so we loop until we get it
         $applicationName = (Read-Host "Application name").Trim()
     }
+
     if (-not $PSBoundParameters.ContainsKey("isMacOsPackage")) {
         $isMacOsPackage = [switch]((Read-Host "Is this a macOS package [y/N] (default is no)") -in "y", "j", "1", "true")
     }
+
     if (-not $repositoryName) {
         $repoNameDefault = "$vendorName $applicationName".Trim()
         if ($isMacOsPackage) { $repoNameDefault += " macOS" }
         $repositoryName = (Read-Host "Repository name (default: '$repoNameDefault')").Trim()
         if (-not $repositoryName) { $repositoryName = $repoNameDefault }
     }
-    if ($repositoryName -inotlike "*macOS") { $repositoryName += " macOS" }
+    if ($isMacOsPackage -and $repositoryName -inotlike "*macOS") { $repositoryName += " macOS" }
+
     if (-not $repositoryPath) {
         $repoPathDefault = ($repositoryName -ireplace '[-_ ]+', '-' -ireplace '[^a-z0-9-]').Trim('-').ToLowerInvariant()
         $repositoryPath = (Read-Host "Repository path (default: $repoPathDefault)").Trim()
         if (-not $repositoryPath) { $repositoryPath = $repoPathDefault }
     }
-    if ($repositoryPath -inotlike "*macos") { $repositoryPath += "-macos" }
+    if ($isMacOsPackage -and $repositoryPath -inotlike "*macos") { $repositoryPath += "-macos" }
+
     if (-not $repositoryNamespace) {
         $repositoryNamespace = Read-Host "Repository namespace (leave empty for 'generic-packages', Format: {customer}-packages)"
     }
+
     if (-not $gitlabPersonalAccessToken) {
         $gitlabPersonalAccessToken = Read-Host "Personal Access Token (to automate, set env var GitLabToken or create gl.token file)"
     }
+
     if (-not $PSBoundParameters.ContainsKey("GitUseSsh")) {
         $gitUseSsh = [switch]((Read-Host "Use SSH for Git [y/N] (default is https)") -in "y", "j", "1", "true")
     }
+
 }
 else {
+
     if (-not ($applicationName)) {
         throw "ERROR: Need ApplicationName if passing -DoNotQueryParameters"
     }
@@ -82,6 +93,7 @@ else {
     if (-not $repositoryPath) {
         $repositoryPath = ($repositoryName -ireplace '[-_ ]+', '-' -ireplace '[^a-z0-9-]').Trim('-').ToLowerInvariant()
     }
+
 }
 
 
@@ -178,8 +190,8 @@ if (-not $DoNotCopyTemplate) {
 # SIG # Begin signature block
 # MIIvTAYJKoZIhvcNAQcCoIIvPTCCLzkCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCATC8Thhs4agIU0
-# jb1Fq4WgqSUhEzHMGTjZhOVX6Lm/yqCCFDUwggWQMIIDeKADAgECAhAFmxtXno4h
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBCqSSTjeTzrAHD
+# iy5au3wKx3sfyDJNzQrdHOzNAqTwnKCCFDUwggWQMIIDeKADAgECAhAFmxtXno4h
 # MuI5B72nd3VcMA0GCSqGSIb3DQEBDAUAMGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQK
 # EwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNV
 # BAMTGERpZ2lDZXJ0IFRydXN0ZWQgUm9vdCBHNDAeFw0xMzA4MDExMjAwMDBaFw0z
@@ -292,23 +304,23 @@ if (-not $DoNotCopyTemplate) {
 # RzQgQ29kZSBTaWduaW5nIFJTQTQwOTYgU0hBMzg0IDIwMjEgQ0ExAhAE0w/ewLw2
 # E3KQ6RwmFyT5MA0GCWCGSAFlAwQCAQUAoIGEMBgGCisGAQQBgjcCAQwxCjAIoAKA
 # AKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEO
-# MAwGCisGAQQBgjcCARUwLwYJKoZIhvcNAQkEMSIEII0UyfeLhgQCdk8djW5BNvxF
-# 9ntFdeCPV7qtIkbVOB7vMA0GCSqGSIb3DQEBAQUABIICABUVXWY5EZA4L3ywEva0
-# xZYv1dahtBDimsZhyqpC/QnMCMicb+Ft3sYQhQshO9lz2gE7Y5J2Ku6LkO4uxg1k
-# TKiSEHIz6v8or5e6pLqk3qvgeEFcDAfN36TPBJjvipE7wnLViaMfeNWiczqiQ0Nb
-# 0EGs31T7sWoafq2LiTxDDcZYKDoAButwJnPfICVRVZwpsmiqD9O5cfZ0nKpmSLuz
-# Zh8WYYCHFIevj6TmRx/qV4u0W9AITIaHGZnIEeOWfekb4ywaCzLCJL3p2FPTODBL
-# Y8bC1Y7CAjqFZL6JYKpSM74WbFbmNwdiOeqr8oUzVLXBcvl3CEDKafXxB9/w+v6r
-# ccTO1n2tz2ZxgQ8A3KmkfvHQudLyWpfnzDQJvFzVimvwTXiHi1GDn1mlaL4NYUip
-# ASQS7QqYrBGMwcPgcigJE5PL0j/sPpmpSkmODkOQq197zQqHH1fh9YakcHbH/e6f
-# fgCgT6g41JiYSFLlOTMZw+tL5LKSA3DdJ/c7mEiS2yySsmQPzJDZsQ3FTbM44ML1
-# 3uIM4/aXafP38dgqhkAwdlMKewloOGIpsJMFWx/kqlfwrO9lg7I7iqTmTYwBGjKg
-# afroilDQmFb9Q/hrpFg7yC7+m00RoOOFkAr42j1c1mFnxv7l9ggiMeC176j9DJkh
-# EEcbJLgqNkzrJ3SOR27GqUnqoYIXOjCCFzYGCisGAQQBgjcDAwExghcmMIIXIgYJ
+# MAwGCisGAQQBgjcCARUwLwYJKoZIhvcNAQkEMSIEINHLRk+7qQBycffAHLUe0x19
+# 75jOgIT5n9i94FCA5q6FMA0GCSqGSIb3DQEBAQUABIICAL9n+QcZaa2kz3Z1r1gF
+# /AvlqN+gnt7AvQpi25nJntBY3ZkyUpvzsarTt0L89virdB5wgQYwp/ml+JYfYCja
+# niiuzpAI29rwOtdxgQV8r5JiwdpUsfzoM5EpTlqgwm2dgDR8COPhPDwK3MTT3rMw
+# Fk6lush5Nj2gwsNyhHzqf3dcO7LXK6UFBgFJl3lPy3Qalqx5JgwFn41QUt4bk/di
+# /5Iq0uM5SWAmKyw47qxTkGfwthcNui09uRvrm6zcF9Bg2TxMbhVSIv/DJK1Q+GBy
+# KBHloUPlzdsdOJT00p2I3woyAN1JUJieFBEKsHsCFIYPD/K4CSHjnZaX7Zz7vzL3
+# IMH2CXKqGakjj5KXlREH3H3ZizN1FKz0D8lCx8OhCg3E+WWTmSzhfpkWtHRqsaHN
+# tHnwPOlAYp9WyjJNAAw19TofqzoV8fekOcjVVugU8woHgreFJCzaWbz01oV/GdSc
+# 5ZfhWau7Rgs3lgwIh3WzSUb6/VuIm6bUlkg5zgDdew3xyGgrRDWwGULWwngeFjjS
+# SU+bfUGCFaBWNvg4ZQqEmsi6Myh2eg1b8kkx5jckneZEVmafG8sDJqh6WyUjTBbi
+# tdrRRXGer6TVUPTypMWKVzlqETSYoHGIf9bDPae9vhA4aDC216ZmYQLW4LfsEZWM
+# sowwpm0rkiMz6+f/U5l0rn8uoYIXOjCCFzYGCisGAQQBgjcDAwExghcmMIIXIgYJ
 # KoZIhvcNAQcCoIIXEzCCFw8CAQMxDzANBglghkgBZQMEAgEFADB4BgsqhkiG9w0B
-# CRABBKBpBGcwZQIBAQYJYIZIAYb9bAcBMDEwDQYJYIZIAWUDBAIBBQAEINNWrwTr
-# Kljh1M1lyw9j2wbnOAvR4S6TwvvQxkOlPEckAhEA9DCVneqMto6HWcH/jOtSRRgP
-# MjAyNTA2MDUxNDM0MzJaoIITAzCCBrwwggSkoAMCAQICEAuuZrxaun+Vh8b56QTj
+# CRABBKBpBGcwZQIBAQYJYIZIAYb9bAcBMDEwDQYJYIZIAWUDBAIBBQAEIGqYQuJ2
+# zYfBPoQaCgFwzYPPOlThL1uqtBpn1RQpynpzAhEAtTrr42X3Xfgngf0l9cXWpxgP
+# MjAyNTA2MDYxMDEyMDRaoIITAzCCBrwwggSkoAMCAQICEAuuZrxaun+Vh8b56QTj
 # MwQwDQYJKoZIhvcNAQELBQAwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lD
 # ZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYg
 # U0hBMjU2IFRpbWVTdGFtcGluZyBDQTAeFw0yNDA5MjYwMDAwMDBaFw0zNTExMjUy
@@ -413,20 +425,20 @@ if (-not $DoNotCopyTemplate) {
 # ATB3MGMxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkG
 # A1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3Rh
 # bXBpbmcgQ0ECEAuuZrxaun+Vh8b56QTjMwQwDQYJYIZIAWUDBAIBBQCggdEwGgYJ
-# KoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEPFw0yNTA2MDUx
-# NDM0MzJaMCsGCyqGSIb3DQEJEAIMMRwwGjAYMBYEFNvThe5i29I+e+T2cUhQhyTV
-# hltFMC8GCSqGSIb3DQEJBDEiBCD6FM96+7KCOXY7FRhQvmJKzB8GDkRE9vrRM3XN
-# x+wWozA3BgsqhkiG9w0BCRACLzEoMCYwJDAiBCB2dp+o8mMvH0MLOiMwrtZWdf7X
-# c9sF1mW5BZOYQ4+a2zANBgkqhkiG9w0BAQEFAASCAgAOnZ/S5YBoDZulryIbbgCM
-# xrbuo9Q/iNmswMHV6GHuRmday+Pza5kjVNX7N8jA2m8M87bw5L9sLJ81SF4fRbBQ
-# us83gbpO32Ud+97yMJ6aijtC99WonLYPH4ZmvOyK1Ry3WbJIfogrRoFaL4hCStbC
-# wzexxN4Oe2TRrKeqXw9RwRCJowk2HzTX6LtDK1+Z+m+zmdcm90cOwl6ZuvjDcpft
-# XqJuJ/Y92XeT/MyBdiSXAnU8yD9OCtMJdD80cnT7MFssKa0r5K6XFeVxrb2F+3Hb
-# zgnqkTRGn+uv0yeCkfjtc0oc1iNW5tKw3FFZnPWURK5xwIf7amL7lo9flZRWH5dW
-# W0tBi5rvAYRkInVbcV4TzS/Jhoi1YhC1Y1/pGCDlAPz1Ht+9L77VAJHuGVpTC9ED
-# FdrPMMJwNgqgSi7x3vCDp0+qOaag0027O6jHBQhUTk/E9AxKflzzHI9mDUWI2XQ2
-# FstrLdzFkXl2XbM6sYu07UOE/533LnuHP5+9ItzftNf8Dfg0EBNdK1N3CQEQPhWz
-# kEZ3shqdQFcsr2qKibzeqyPyzOIBMudbe0Cp5WZbqeyjX+4JWuuS7GlQhzd6zxl7
-# JDrtg0O0nUy95W2RQwD2kVBO9bKKwJ3cWXVwngO/3IxophEwNjrnD/wyUPIZT/Zh
-# khCg82BCRHpRCALhMDGEkA==
+# KoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEPFw0yNTA2MDYx
+# MDEyMDRaMCsGCyqGSIb3DQEJEAIMMRwwGjAYMBYEFNvThe5i29I+e+T2cUhQhyTV
+# hltFMC8GCSqGSIb3DQEJBDEiBCBKo7Oeh6YF4urrV3pN1OktBcEiRfKvD4hoSkfc
+# wP1tHjA3BgsqhkiG9w0BCRACLzEoMCYwJDAiBCB2dp+o8mMvH0MLOiMwrtZWdf7X
+# c9sF1mW5BZOYQ4+a2zANBgkqhkiG9w0BAQEFAASCAgCo2vCoyIXubGnJwR7mAG3g
+# qzHoPLHz+WFpMwC5olRJxAjP+CZ2KWYyi6K7vRKriHPZnzVBKockRWPlneVs7LfP
+# st/shLK1112S71OdKPPp/fhxP9cckM5IMBl/LZ6PnhT0memPAhmiXy3qrPB3DDiq
+# LkusEXUPyzTqDQiSvWpj9D8+3DquV1T08imDvjE+CerbirACVPsSnIAEe/ee56Hp
+# 3HZ2G4/+WROQVPPF1AJSoZPpI/4o7nn5oH+m+5tppg/Nf/w+Pd9tYNgROxbIt5qF
+# ANVvzs1GzTFq9/6mQD7MlxVW/t1ctn9LEISv/0NHaMwJ6JVYC4kMn9kMp42Xnn7G
+# xTDGCnmI424NiXZyy+SZqeUt93+gFdOFY5pbXoEOJGs3M5gquZvV05rDPB3PJFtO
+# i/+aRhlpOzDTiYvu01Wnw9EWgCVNHqY82vEcLbHpeQRLnLCFyOutr1dUwO/osn4W
+# Pa3Zz8wisM+9dWkOcSNz0fnxppojdSz/0n35lNP2DCQynHSq52Y0ragv+fygusLB
+# YaT4TN+TzFIcGFHyf6BsiwDEU/GD/AGoGCF5wEGt1yCt8aNsrATLQOLDMo/tBTC7
+# fA4VMY8x19tlA2rFF7AbMgclJ0UM3mAuBbjn4xlAJAlnaWbAuD4WsLNvIGcIegNd
+# +W7ZvnYBh8u01fER1YAibA==
 # SIG # End signature block
