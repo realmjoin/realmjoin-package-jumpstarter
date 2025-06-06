@@ -61,7 +61,6 @@ if (-not $DoNotQueryParameters) {
         $repositoryPath = (Read-Host "Repository path (default: $repoPathDefault)").Trim()
         if (-not $repositoryPath) { $repositoryPath = $repoPathDefault }
     }
-    if ($repositoryPath -inotlike "*macos") { $repositoryPath += "-macos" }
     if (-not $repositoryNamespace) {
         $repositoryNamespace = Read-Host "Repository namespace (leave empty for 'generic-packages', Format: {customer}-packages)"
     }
